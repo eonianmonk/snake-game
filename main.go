@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	app := tgrid()
+	app := tgrid(25)
 	go changeScore(app)
 	if err := app.Run(); err != nil {
 		panic(err)

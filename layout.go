@@ -61,16 +61,7 @@ func tgrid(gridSize int) *tview.Application {
 	// 	SetBorder(true).SetBorderAttributes(tcell.AttrBold).
 	// 	SetTitle("SNAKE").SetTitleAlign(tview.AlignCenter)
 
-	gridPlaceholder := make([]int, gridSize)
-	for i := range gridPlaceholder {
-		gridPlaceholder[i] = -1
-	}
-	gameGrid := tview.NewGrid().
-		//SetColumns(gridPlaceholder...).SetRows(gridPlaceholder...).
-		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
-		SetTitle("Snake").SetTitleAlign(tview.AlignCenter) //.
-	//		SetDrawFunc(drawGame())
-
+	gameGrid := NewGameGrid(gridSize, nil)
 	grid := tview.NewGrid().
 		SetColumns(-1, -1, -1).
 		SetRows(5, -1).
