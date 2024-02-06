@@ -37,29 +37,47 @@ func drawScore(score *int) DrawFunc {
 	}
 }
 
-func tgrid() *tview.Application {
+func drawGame() DrawFunc {
+	return func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		//_, _, style, _ := screen.GetContent(x, y)
+
+		return x, y, width, height
+	}
+}
+
+func tgrid(gridSize int) *tview.Application {
 
 	scoreBox := tview.NewBox().
 		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
-		SetTitle("Score").SetTitleAlign(tview.AlignLeft).
-		SetDrawFunc(drawScore(&score))
+		SetTitle("Score").SetTitleAlign(tview.AlignLeft)
+	//		SetDrawFunc(drawScore(&score))
 
 	gapBox := tview.NewBox().SetBorder(false) // to save color
 	userBox := tview.NewBox().
 		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
 		SetTitle("Username").SetTitleAlign(tview.AlignLeft)
 
-	gameBox := tview.NewBox().
+	// gameBox := tview.NewBox().
+	// 	SetBorder(true).SetBorderAttributes(tcell.AttrBold).
+	// 	SetTitle("SNAKE").SetTitleAlign(tview.AlignCenter)
+
+	gridPlaceholder := make([]int, gridSize)
+	for i := range gridPlaceholder {
+		gridPlaceholder[i] = -1
+	}
+	gameGrid := tview.NewGrid().
+		//SetColumns(gridPlaceholder...).SetRows(gridPlaceholder...).
 		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
-		SetTitle("SNAKE").SetTitleAlign(tview.AlignCenter)
+		SetTitle("Snake").SetTitleAlign(tview.AlignCenter) //.
+	//		SetDrawFunc(drawGame())
 
 	grid := tview.NewGrid().
 		SetColumns(-1, -1, -1).
-		SetRows(3, -1).
+		SetRows(5, -1).
 		AddItem(scoreBox, 0, 0, 1, 1, 2, 1, false).
 		AddItem(gapBox, 0, 1, 1, 1, 2, 1, false).
 		AddItem(userBox, 0, 2, 1, 1, 2, 1, false).
-		AddItem(gameBox, 1, 0, 1, 3, 25, 25, false)
+		AddItem(gameGrid, 1, 0, 1, 3, 10, 10, false)
 		//AddItem()
 
 	return tview.NewApplication().SetRoot(grid, true).EnableMouse(true)
