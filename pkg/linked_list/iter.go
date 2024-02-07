@@ -10,6 +10,9 @@ type Iter[T any] interface {
 }
 
 func NewLLIter[T any](ll *LinkedList[T]) Iter[T] {
+	if ll.length == 0 {
+		panic("tried to iter through empty list")
+	}
 	return &lliter[T]{ptr: ll.head}
 }
 
