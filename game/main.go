@@ -1,13 +1,14 @@
+// snake game logic package
 package game
 
 // cell types
 type CellType uint8
 
 const (
-	SnakeHead CellType = iota
+	BlankCell CellType = iota
 	SnakeBody
+	SnakeHead
 	Food
-	BlankCell
 )
 
 // direction

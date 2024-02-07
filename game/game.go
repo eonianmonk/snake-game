@@ -2,80 +2,96 @@ package game
 
 import (
 	"time"
-
-	linkedlist "github.com/eonianmonk/snake-game/pkg/linked_list"
-	"github.com/rivo/tview"
 )
 
 type GameRules struct {
 	// rows/columns size
-	tickInterval time.Duration
-	gameSize     int
+	TickInterval time.Duration
+	GameSize     int
 	// allow going through walls
-	//transparantWalls bool
+	TransparantWalls bool
 }
 
 type Game struct {
+	*Grid
+	*Snake
 	rules  *GameRules
-	app    *tview.Application
-	grid   *Grid
-	snake  *Snake
 	ticker *time.Ticker
+	signal chan struct{}
 	input  <-chan Direction
 }
 
-func NewGame(rules *GameRules, app *tview.Application, dirChan <-chan Direction) *Game {
-	grid := NewGrid(rules.gameSize)
-	snake := &Snake{
-		length:  1,
-		bodyDir: None,
-		headDir: Right,
-		snake: linkedlist.NewLinkedList[SnakePart](SnakePart{
-			row:    rules.gameSize / 2,
-			col:    rules.gameSize / 2,
-			facing: Right,
-		}),
-	}
+func NewGame(rules *GameRules, dirChan <-chan Direction, signal chan struct{}) *Game {
+	grid := NewGrid(rules.GameSize)
+	snake := NewSnake(rules.GameSize)
 	return &Game{
+		signal: signal,
 		rules:  rules,
-		app:    app,
-		grid:   grid,
-		snake:  snake,
-		ticker: time.NewTicker(rules.tickInterval),
+		Grid:   grid,
+		Snake:  snake,
+		ticker: time.NewTicker(rules.TickInterval),
 	}
 }
 
-func (g *Game) Start() {
-	go g.eventLoop()
+func (g *Game) Start() error {
+	return g.eventLoop()
 }
 
 func (g *Game) eventLoop() error {
 	for {
 		select {
 		case <-g.ticker.C:
-			g.grid.Lock()
 			// game loop
-			continue
+
+			ok := g.Step()
+			if !ok { // lost
+				return nil
+			}
+			g.signal <- struct{}{}
 		case dir := <-g.input:
 			// change direction
-			g.snake.ChangeDirection(dir)
+			g.Snake.ChangeDirection(dir)
 		}
 	}
-	return nil
 }
 
 // calculates one step
 // returns true if step is valid, false if hit itself/wall
-func (g *Game) StepOnce() bool {
+func (g *Game) Step() bool {
 
 	// cmpFn := func(a SnakePart, b SnakePart) bool {
 	// 	return a.col == b.col && a.row == b.row
 	// }
-	g.grid.Lock()
-	defer g.grid.Unlock()
 	//check if valid position
+	row, col := g.Snake.CalculateNextStep()
 
-	//if cell is with food - add cell to the head
-	//else remove tail value and add value ahead
+	if row >= g.rules.GameSize || row <= 0 ||
+		col >= g.rules.GameSize || col <= 0 {
+		if g.rules.TransparantWalls {
+
+			col = (col + g.rules.GameSize) % g.rules.GameSize
+			row = (row + g.rules.GameSize) % g.rules.GameSize
+		} else {
+			return false // struck the wall
+		}
+	}
+
+	ct := g.Grid.CheckCell(row, col)
+	switch ct {
+	case Food:
+		g.Snake.StepOnce(true, true)
+	case BlankCell:
+		g.Snake.StepOnce(false, true)
+	case SnakeBody:
+		return false
+	case SnakeHead:
+		// how did you get here???
+		return false
+	default:
+		panic("unknown cell type!")
+	}
+	// update Grid
+	g.Grid.Update(g.Snake, ct == Food)
+
 	return true
 }

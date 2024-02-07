@@ -4,14 +4,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/eonianmonk/snake-game/game"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-var (
-	score        = 12345
-	scoreSymbols = 6
-)
+type GameUI struct {
+	app          *tview.Application
+	gameGrid     *GameGrid
+	dirChan      chan game.Direction
+	displayScore int
+}
 
 type DrawFunc func(screen tcell.Screen, x, y, width, height int) (int, int, int, int)
 
@@ -37,20 +40,12 @@ func drawScore(score *int) DrawFunc {
 	}
 }
 
-func drawGame() DrawFunc {
-	return func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
-		//_, _, style, _ := screen.GetContent(x, y)
-
-		return x, y, width, height
-	}
-}
-
-func tgrid(gridSize int) *tview.Application {
-
+func App(gridSize int, dc chan game.Direction) *GameUI {
+	var displayScore int = 0
 	scoreBox := tview.NewBox().
 		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
-		SetTitle("Score").SetTitleAlign(tview.AlignLeft)
-	//		SetDrawFunc(drawScore(&score))
+		SetTitle("Score").SetTitleAlign(tview.AlignLeft).
+		SetDrawFunc(drawScore(&displayScore))
 
 	gapBox := tview.NewBox().SetBorder(false) // to save color
 	userBox := tview.NewBox().
@@ -69,7 +64,43 @@ func tgrid(gridSize int) *tview.Application {
 		AddItem(gapBox, 0, 1, 1, 1, 2, 1, false).
 		AddItem(userBox, 0, 2, 1, 1, 2, 1, false).
 		AddItem(gameGrid, 1, 0, 1, 3, 10, 10, false)
-		//AddItem()
+	//AddItem()
+	app := tview.NewApplication().SetRoot(grid, true).EnableMouse(false)
 
-	return tview.NewApplication().SetRoot(grid, true).EnableMouse(true)
+	ui := &GameUI{
+		app:      app,
+		gameGrid: gameGrid,
+		dirChan:  dc,
+	}
+
+	ui.app.SetInputCapture(ui.processInput)
+
+	return ui
+
+}
+
+func (ui *GameUI) Update(grid *game.Grid) {
+	ui.gameGrid.Update(grid)
+}
+
+func (ui *GameUI) UpdateScore(score int) {
+	ui.displayScore = score
+}
+
+func (ui *GameUI) StartUI() error {
+	return ui.app.Run()
+}
+
+func (ui *GameUI) processInput(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Rune() {
+	case 'w':
+		ui.dirChan <- game.Up
+	case 'd':
+		ui.dirChan <- game.Right
+	case 's':
+		ui.dirChan <- game.Down
+	case 'a':
+		ui.dirChan <- game.Left
+	}
+	return event
 }

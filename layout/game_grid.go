@@ -20,7 +20,7 @@ func (gg *GameGrid) Draw(screen tcell.Screen) {
 	}
 }
 
-func NewGameGrid(size int, game *game.Game) tview.Primitive {
+func NewGameGrid(size int, game *game.Game) *GameGrid {
 
 	gridPlaceholder := make([]int, size)
 	for i := range gridPlaceholder {
@@ -53,5 +53,28 @@ func NewGameGrid(size int, game *game.Game) tview.Primitive {
 		Grid:  grid,
 		cells: cells,
 		game:  game,
+	}
+}
+
+func (ui *GameGrid) Update(grid *game.Grid) {
+	gridSize := len(ui.cells)
+
+	for i := 0; i < gridSize; i++ {
+		for j := 0; j < gridSize; j++ {
+			var color tcell.Color
+			switch grid.CheckCell(i, j) {
+			case game.Food:
+				color = FoodColor
+			case game.SnakeBody:
+				color = BodyColor
+			case game.SnakeHead:
+				color = HeadColor
+			case game.BlankCell:
+				color = BlankColor
+			default:
+				panic("failed to id cell type while updating ui")
+			}
+			ui.cells[i][j].SetBackgroundColor(color)
+		}
 	}
 }

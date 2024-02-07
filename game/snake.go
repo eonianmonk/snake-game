@@ -2,16 +2,24 @@ package game
 
 import linkedlist "github.com/eonianmonk/snake-game/pkg/linked_list"
 
-type SnakePart struct {
-	row, col int
-	facing   Direction
+type Snake struct {
+	length   int
+	snake    *linkedlist.LinkedList[Pos] // TODO: move to lilo queue
+	headDir  Direction
+	bodyDir  Direction
+	nextPart *Pos
 }
 
-type Snake struct {
-	length  int
-	snake   *linkedlist.LinkedList[SnakePart]
-	headDir Direction
-	bodyDir Direction
+func NewSnake(gameSize int) *Snake {
+	return &Snake{
+		length:  1,
+		bodyDir: None,
+		headDir: Right,
+		snake: linkedlist.NewLinkedList[Pos](Pos{
+			row: gameSize / 2,
+			col: gameSize / 2,
+		}),
+	}
 }
 
 func (s *Snake) ChangeDirection(dir Direction) {
@@ -27,14 +35,49 @@ func (s *Snake) ChangeDirection(dir Direction) {
 	s.headDir = dir
 }
 
-func (s *Snake) NextStep()
+// function calculates snake's next step. Required for step finalization
+// should be called before StepOnce
+func (s *Snake) CalculateNextStep() (row int, col int) {
+	headPos := s.snake.At(0).Value()
+	switch s.headDir {
+	case Up:
+		row = headPos.row - 1
+		col = headPos.col
+	case Left:
+		row = headPos.row
+		col = headPos.col - 1
+	case Right:
+		row = headPos.row
+		col = headPos.col + 1
+	case Down:
+		row = headPos.row + 1
+		col = headPos.col
+	default:
+		panic("unknown head direction in NextStep calculation")
+	}
+	s.nextPart = &Pos{row: row, col: col}
+	return
+}
 
-// we use info from the grid
+// function to finalize snake step
 // grow - true if next cell is food
 // supressCellCheck - true if snake should calculate itselt whether it bites itself
-func (s *Snake) StepOnce(grow, supressCellCheck bool) error {
-	if supressCellCheck {
+func (s *Snake) StepOnce(grow, supressCellCheck bool) {
+	if !supressCellCheck {
 		panic("not implemented")
 	}
-	node
+	if s.nextPart == nil {
+		panic("next step not calculated")
+	}
+
+	s.snake.AppendHead(*s.nextPart)
+	if !grow {
+		s.snake.DeleteAt(-1)
+	}
+
+	s.nextPart = nil
+}
+
+func (s *Snake) Score() int {
+	return s.length - 1
 }
