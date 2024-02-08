@@ -31,6 +31,14 @@ func NewLinkedList[T any](value T) *LinkedList[T] {
 	}
 }
 
+func LinkedListFromSlice[T any](slice []T) *LinkedList[T] {
+	ll := NewLinkedList[T](slice[0])
+	for i := 1; i < len(slice); i++ {
+		ll.AppendEnd(slice[i])
+	}
+	return ll
+}
+
 func (ll *LinkedList[T]) AppendEnd(value T) {
 	node := Node[T]{
 		data: value,
@@ -39,6 +47,7 @@ func (ll *LinkedList[T]) AppendEnd(value T) {
 	}
 	ll.end.next = &node
 	ll.end = &node
+	ll.length++
 }
 
 func (ll *LinkedList[T]) AppendHead(value T) {
@@ -49,6 +58,7 @@ func (ll *LinkedList[T]) AppendHead(value T) {
 	}
 	ll.head.prev = &node
 	ll.head = &node
+	ll.length++
 }
 
 func (ll *LinkedList[T]) Len() int {
@@ -70,19 +80,28 @@ func (ll *LinkedList[T]) Contains(value T, compFn func(T, T) bool) bool {
 // positive integers to start at head
 // negative to start at end
 func (ll *LinkedList[T]) at(ix int) *Node[T] {
-	pos := 0
+
+	if ix >= ll.length {
+		return nil
+	}
+
+	var pos int
 	var ptr *Node[T]
 	if ix >= 0 {
+		pos = 0
 		ptr = ll.head
 		for pos != ix && ptr != nil {
-			ptr = ptr.prev
+			ptr = ptr.next
+			pos++
 		}
 	}
 	if ix < 0 {
 		ix = -ix
+		pos = 1
 		ptr = ll.end
 		for pos != ix && ptr != nil {
-			ptr = ptr.next
+			ptr = ptr.prev
+			pos++
 		}
 	}
 	return ptr
@@ -102,6 +121,13 @@ func (ll *LinkedList[T]) DeleteAt(ix int) error {
 	if node == nil {
 		return fmt.Errorf("no node at index %d", ix)
 	}
+
+	if node == ll.head {
+		ll.head = node.next
+	} else if node == ll.end {
+		ll.end = node.prev
+	}
+
 	if node.next != nil {
 		node.next.prev = node.prev
 	}
@@ -115,7 +141,7 @@ func (ll *LinkedList[T]) DeleteAt(ix int) error {
 func (ll *LinkedList[T]) Slice() []T {
 	slice := make([]T, ll.length)
 	for i := 0; i < ll.length; i++ {
-		slice = append(slice, ll.at(i).Value())
+		slice[i] = ll.at(i).data
 	}
 	return slice
 }
