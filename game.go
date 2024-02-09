@@ -9,16 +9,16 @@ import (
 )
 
 func Run() {
-	gameSize := 20
+	gameSize := 10
 	rules := &game.GameRules{
-		TickInterval:     time.Millisecond * 750,
+		TickInterval:     time.Second * 1,
 		GameSize:         gameSize,
 		TransparantWalls: false,
 	}
 	dirChan := make(chan game.Direction)
 	signal := make(chan struct{})
 
-	app := layout.App(gameSize, dirChan)
+	app := layout.App(gameSize, dirChan) //, dirChan)
 	game := game.NewGame(rules, dirChan, signal)
 
 	loop(app, game, signal)
@@ -27,18 +27,19 @@ func Run() {
 func loop(app *layout.GameUI, gm *game.Game, signal chan struct{}) {
 	errch := make(chan error)
 
+	var err error
 	runUi := func(errc chan error) {
-		err := app.StartUI()
-		errc <- fmt.Errorf("ui error: ", err.Error())
+		err = app.StartUI()
+		errc <- fmt.Errorf("ui error: %s", err.Error())
 	}
 	runGame := func(errc chan error) {
-		err := gm.Start()
-		errc <- fmt.Errorf("game error: ", err.Error())
+		err = gm.Start()
+		errc <- fmt.Errorf("game error: %s", err.Error())
 	}
 
 	go runUi(errch)
 	go runGame(errch)
-
+	//signal <- struct{}{} // initial render
 	for {
 		select {
 		case err := <-errch:
@@ -47,6 +48,7 @@ func loop(app *layout.GameUI, gm *game.Game, signal chan struct{}) {
 			// update ui
 			app.Update(gm.Grid)
 			app.UpdateScore(gm.Score())
+			app.Redraw()
 		}
 	}
 }

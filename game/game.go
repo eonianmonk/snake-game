@@ -24,13 +24,15 @@ type Game struct {
 func NewGame(rules *GameRules, dirChan <-chan Direction, signal chan struct{}) *Game {
 	grid := NewGrid(rules.GameSize)
 	snake := NewSnake(rules.GameSize)
-	return &Game{
+	g := &Game{
+		input:  dirChan,
 		signal: signal,
 		rules:  rules,
 		Grid:   grid,
 		Snake:  snake,
 		ticker: time.NewTicker(rules.TickInterval),
 	}
+	return g
 }
 
 func (g *Game) Start() error {
@@ -45,7 +47,7 @@ func (g *Game) eventLoop() error {
 
 			ok := g.Step()
 			if !ok { // lost
-				return nil
+				return GameError{cause: "You lost while stepping!"}
 			}
 			g.signal <- struct{}{}
 		case dir := <-g.input:
@@ -65,8 +67,8 @@ func (g *Game) Step() bool {
 	//check if valid position
 	row, col := g.Snake.CalculateNextStep()
 
-	if row >= g.rules.GameSize || row <= 0 ||
-		col >= g.rules.GameSize || col <= 0 {
+	if row >= g.rules.GameSize || row < 0 ||
+		col >= g.rules.GameSize || col < 0 {
 		if g.rules.TransparantWalls {
 
 			col = (col + g.rules.GameSize) % g.rules.GameSize

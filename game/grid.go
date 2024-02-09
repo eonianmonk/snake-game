@@ -25,11 +25,13 @@ func NewGrid(size int) *Grid {
 	for i := 0; i < size; i++ {
 		gridCells[i] = make([]CellType, size)
 	}
-	return &Grid{
+	g := &Grid{
 		cells: gridCells,
 		size:  size,
 		rand:  rand.New(rand.NewSource(time.Now().Unix())),
 	}
+	g.genFood()
+	return g
 }
 
 func (g *Grid) CheckCell(row, col int) CellType {
@@ -59,17 +61,23 @@ func (g *Grid) Update(snake *Snake, newFood bool) {
 	}
 
 	if newFood {
-		// generate new food & put it on grid
-		for {
-			col := g.rand.Intn(g.size)
-			row := g.rand.Intn(g.size)
-			cell := g.cells[row][col]
+		g.genFood()
+	} else {
+		g.cells[g.foodPos.row][g.foodPos.col] = Food
+	}
+}
 
-			if cell != SnakeBody && cell != SnakeHead {
-				g.foodPos = &Pos{col: col, row: row}
-				g.cells[row][col] = Food
-				break
-			}
+func (g *Grid) genFood() {
+	// generate new food & put it on grid
+	for {
+		col := g.rand.Intn(g.size)
+		row := g.rand.Intn(g.size)
+		cell := g.cells[row][col]
+
+		if cell == BlankCell {
+			g.foodPos = &Pos{col: col, row: row}
+			g.cells[row][col] = Food
+			break
 		}
 	}
 }

@@ -70,9 +70,13 @@ func (s *Snake) StepOnce(grow, supressCellCheck bool) {
 		panic("next step not calculated")
 	}
 
+	// nextPart calculated in CalculateNextStep
 	s.snake.AppendHead(*s.nextPart)
 	if !grow {
-		s.snake.DeleteAt(-1)
+		err := s.snake.DeleteAt(-1)
+		if err != nil {
+			panic(err) // failed to delete snake's tail
+		}
 	}
 
 	s.nextPart = nil

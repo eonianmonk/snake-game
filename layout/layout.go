@@ -16,8 +16,6 @@ type GameUI struct {
 	displayScore int
 }
 
-type DrawFunc func(screen tcell.Screen, x, y, width, height int) (int, int, int, int)
-
 func drawScore(score *int) DrawFunc {
 	return func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
 		underscoreWidth := width / (scoreSymbols + scoreSymbols/2)
@@ -47,33 +45,30 @@ func App(gridSize int, dc chan game.Direction) *GameUI {
 		SetTitle("Score").SetTitleAlign(tview.AlignLeft).
 		SetDrawFunc(drawScore(&displayScore))
 
-	gapBox := tview.NewBox().SetBorder(false) // to save color
+	gapBox := tview.NewBox() // empty placeholder
 	userBox := tview.NewBox().
 		SetBorder(true).SetBorderAttributes(tcell.AttrBold).
 		SetTitle("Username").SetTitleAlign(tview.AlignLeft)
 
-	// gameBox := tview.NewBox().
-	// 	SetBorder(true).SetBorderAttributes(tcell.AttrBold).
-	// 	SetTitle("SNAKE").SetTitleAlign(tview.AlignCenter)
-
-	gameGrid := NewGameGrid(gridSize, nil)
+	gameGrid := NewGameGrid(gridSize)
 	grid := tview.NewGrid().
 		SetColumns(-1, -1, -1).
-		SetRows(5, -1).
-		AddItem(scoreBox, 0, 0, 1, 1, 2, 1, false).
-		AddItem(gapBox, 0, 1, 1, 1, 2, 1, false).
-		AddItem(userBox, 0, 2, 1, 1, 2, 1, false).
-		AddItem(gameGrid, 1, 0, 1, 3, 10, 10, false)
-	//AddItem()
-	app := tview.NewApplication().SetRoot(grid, true).EnableMouse(false)
+		SetRows(3, -20).
+		AddItem(scoreBox, 0, 0, 1, 1, 0, 0, false).
+		AddItem(gapBox, 0, 1, 1, 1, 0, 0, false).
+		AddItem(userBox, 0, 2, 1, 1, 0, 0, false).
+		AddItem(gameGrid, 1, 0, 1, 3, 0, 0, false)
+
+	app := tview.NewApplication().SetRoot(grid, true)
 
 	ui := &GameUI{
-		app:      app,
-		gameGrid: gameGrid,
-		dirChan:  dc,
+		app:          app,
+		gameGrid:     gameGrid,
+		dirChan:      dc,
+		displayScore: displayScore,
 	}
 
-	ui.app.SetInputCapture(ui.processInput)
+	app.SetInputCapture(ui.processInput)
 
 	return ui
 
@@ -89,6 +84,10 @@ func (ui *GameUI) UpdateScore(score int) {
 
 func (ui *GameUI) StartUI() error {
 	return ui.app.Run()
+}
+
+func (ui *GameUI) Redraw() {
+	ui.app.Draw()
 }
 
 func (ui *GameUI) processInput(event *tcell.EventKey) *tcell.EventKey {
