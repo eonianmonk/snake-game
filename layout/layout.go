@@ -13,7 +13,7 @@ type GameUI struct {
 	app          *tview.Application
 	gameGrid     *GameGrid
 	dirChan      chan game.Direction
-	displayScore int
+	displayScore *int
 }
 
 func drawScore(score *int) DrawFunc {
@@ -65,7 +65,7 @@ func App(gridSize int, dc chan game.Direction) *GameUI {
 		app:          app,
 		gameGrid:     gameGrid,
 		dirChan:      dc,
-		displayScore: displayScore,
+		displayScore: &displayScore,
 	}
 
 	app.SetInputCapture(ui.processInput)
@@ -79,7 +79,7 @@ func (ui *GameUI) Update(grid *game.Grid) {
 }
 
 func (ui *GameUI) UpdateScore(score int) {
-	ui.displayScore = score
+	*ui.displayScore = score
 }
 
 func (ui *GameUI) StartUI() error {

@@ -3,8 +3,7 @@ package game
 import linkedlist "github.com/eonianmonk/snake-game/pkg/linked_list"
 
 type Snake struct {
-	length   int
-	snake    *linkedlist.LinkedList[Pos] // TODO: move to lilo queue
+	snake    *linkedlist.LinkedList[Pos] // TODO: move to lilo queue (maybe)
 	headDir  Direction
 	bodyDir  Direction
 	nextPart *Pos
@@ -12,7 +11,6 @@ type Snake struct {
 
 func NewSnake(gameSize int) *Snake {
 	return &Snake{
-		length:  1,
 		bodyDir: None,
 		headDir: Right,
 		snake: linkedlist.NewLinkedList[Pos](Pos{
@@ -23,7 +21,7 @@ func NewSnake(gameSize int) *Snake {
 }
 
 func (s *Snake) ChangeDirection(dir Direction) {
-	if s.length == 1 {
+	if s.snake.Len() == 1 {
 		s.headDir = dir
 		return
 	}
@@ -83,5 +81,5 @@ func (s *Snake) StepOnce(grow, supressCellCheck bool) {
 }
 
 func (s *Snake) Score() int {
-	return s.length - 1
+	return s.snake.Len() - 1
 }
